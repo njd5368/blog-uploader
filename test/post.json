@@ -1,0 +1,17 @@
+{
+    "name": "test",
+    "description": "test one",
+    "date": "2022-05-16",
+    "type": "academic",
+    "languages": [
+        "golang",
+        "python"
+    ],
+    "technologies": [
+        "a",
+        "b",
+        "c",
+        "d",
+        "e"
+    ]
+}

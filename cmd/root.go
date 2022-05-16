@@ -5,10 +5,14 @@ Copyright © 2022 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"bufio"
 	"fmt"
 	"os"
+	"strings"
+	"syscall"
 
 	"github.com/spf13/cobra"
+	"golang.org/x/term"
 )
 
 var CmdConfig *Config
@@ -55,4 +59,21 @@ func init() {
 	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
+func retrieveUsernamePassword() (string, error) {
+	fmt.Print("Enter a username for the API user: ")
+	reader := bufio.NewReader(os.Stdin)
+	username, err := reader.ReadString('\n')
+	username = strings.TrimSpace(username)
+	if err != nil {
+		return "", err
+	}
 
+	fmt.Print("Enter a password for the API user: ")
+	passwordBytes, err := term.ReadPassword(int(syscall.Stdin))
+	if err != nil {
+		return "", err
+	}
+	fmt.Println()
+
+	return username + ":" + string(passwordBytes), err
+}

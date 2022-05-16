@@ -5,6 +5,8 @@ Copyright © 2022 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"bufio"
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -24,7 +26,7 @@ type Post struct {
 	Languages    []string `json:"languages"`
 	Technologies []string `json:"technologies"`
 
-	File []byte `json:"file"
+	File []byte `json:"file"`
 
 }
 
@@ -39,6 +41,12 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
+		usernamePassword, err := retrieveUsernamePassword()
+		if err != nil {
+			fmt.Print(err)
+			return
+		}
+
 		dir, err := os.Getwd()
 		if err != nil {
 			fmt.Print(err)
@@ -54,13 +62,59 @@ to quickly create a Cobra application.`,
 		var post Post
 		json.Unmarshal(configBytes, &post)
 
-		markdown, err := ioutil.ReadFile(dir + "/post.md")
+		markdownFile, err := os.Open(dir + "/post.md")
 		if err != nil {
 			fmt.Print(err)
 			return
 		}
 
-		post.
+		var markdown []byte
+
+		scanner := bufio.NewScanner(markdownFile)
+		scanner.Split(bufio.ScanLines)
+		for scanner.Scan() {
+			line := scanner.Bytes()
+			if bytes.HasPrefix(line, []byte("![")) {
+				s := bytes.IndexByte(line, byte('('))
+				e := bytes.IndexByte(line, byte(')'))
+				if s != -1 && e != -1 && s < e{
+					s += 1
+					e -= 1
+					imageName := line[s:e]
+					image, err := ioutil.ReadFile(dir + "/" + string(imageName))
+					if err != nil {
+						fmt.Print(err)
+						return
+					}
+
+					request, err := http.NewRequest("Post", CmdConfig.APIURL + "/api/image", bytes.NewBuffer(image))
+					if err != nil {
+						fmt.Print(err)
+						return
+					}
+					request.Header.Set("Content-type", "application/octet-stream")
+					request.Header.Set("Authorization", "Basic " + usernamePassword)
+					response, err := http.DefaultClient.Do(request)
+					if err != nil {
+						fmt.Print(err)
+						return
+					}
+
+					location := response.Header.Get("Location")
+					if len(location) == 0 {
+						fmt.Print("Error uploading an image file.")
+						return
+					}
+
+					line = bytes.Replace(line, imageName, []byte(location), 1)
+				}
+			}
+
+			markdown = append(markdown, line...)
+			markdown = append(markdown, byte('\n'))
+		}
+
+		post.File = markdown
 
 		hero, err := ioutil.ReadFile(dir + "/hero.jpeg")
 		if err != nil {
@@ -68,9 +122,33 @@ to quickly create a Cobra application.`,
 			return
 		}
 
+		post.Image = hero
 
+		reqBody, err := json.Marshal(post)
+		if err != nil {
+			fmt.Print(err)
+			return
+		}
 
-		apiCall := http.NewRequest("POST", CmdConfig.APIURL + "/api/project", )
+		apiCall, err := http.NewRequest("Post", CmdConfig.APIURL + "/api/project", bytes.NewBuffer(reqBody))
+		if err != nil {
+			fmt.Print(err)
+			return
+		}
+
+		apiCall.Header.Set("Content-type", "application/json")
+		apiCall.Header.Set("Authorization", "Basic " + usernamePassword)
+
+		response, err := http.DefaultClient.Do(apiCall)
+		if err != nil {
+			fmt.Print(err)
+			return
+		}
+		if response.StatusCode != http.StatusAccepted {
+			fmt.Print("Error sending post request.")
+			return
+		}
+		fmt.Print("Submitted blog post.")
 	},
 }
 
