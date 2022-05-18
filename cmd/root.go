@@ -6,6 +6,7 @@ package cmd
 
 import (
 	"bufio"
+	"encoding/base64"
 	"fmt"
 	"os"
 	"strings"
@@ -75,5 +76,7 @@ func retrieveUsernamePassword() (string, error) {
 	}
 	fmt.Println()
 
-	return username + ":" + string(passwordBytes), err
+	usernamePassword := append([]byte(username), byte(':'))
+	usernamePassword = append(usernamePassword, passwordBytes...)
+	return base64.StdEncoding.EncodeToString(usernamePassword), err
 }

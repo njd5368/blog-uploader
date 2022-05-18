@@ -87,7 +87,7 @@ to quickly create a Cobra application.`,
 						return
 					}
 
-					request, err := http.NewRequest("Post", CmdConfig.APIURL + "/api/image", bytes.NewBuffer(image))
+					request, err := http.NewRequest("POST", CmdConfig.APIURL + "/api/image", bytes.NewBuffer(image))
 					if err != nil {
 						fmt.Print(err)
 						return
@@ -130,7 +130,7 @@ to quickly create a Cobra application.`,
 			return
 		}
 
-		apiCall, err := http.NewRequest("Post", CmdConfig.APIURL + "/api/project", bytes.NewBuffer(reqBody))
+		apiCall, err := http.NewRequest("POST", CmdConfig.APIURL + "/api/projects", bytes.NewBuffer(reqBody))
 		if err != nil {
 			fmt.Print(err)
 			return

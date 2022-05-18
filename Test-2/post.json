@@ -1,0 +1,15 @@
+{
+    "name": "Test2",
+    "description": "This is a test of the american broadcast system",
+    "date": "2022-05-17",
+    "type": "Academic",
+    "languages": [
+        "Golang",
+        "Python",
+        "Java"
+    ],
+    "technologies": [
+        "Blockchain",
+        "BS"
+    ]
+}
