@@ -16,8 +16,6 @@ import (
 	"golang.org/x/term"
 )
 
-var CmdConfig *Config
-
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "blog",
@@ -36,13 +34,7 @@ to quickly create a Cobra application.`,
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
-	var err error
-	CmdConfig, err = ReadConfigFile()
-	if err != nil {
-		fmt.Print(err)
-		return
-	}
-	err = rootCmd.Execute()
+	err := rootCmd.Execute()
 	if err != nil {
 		os.Exit(1)
 	}

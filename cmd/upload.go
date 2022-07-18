@@ -18,21 +18,21 @@ import (
 
 type Post struct {
 	Name        string `json:"name"`
+	Type        string `json:"type"`
 	Description string `json:"description"`
 	Date        string `json:"date"`
-	Type        string `json:"type"`
-	Image       []byte  `json:"image"`
+	Category    string `json:"category"`
+	Image       []byte `json:"image"`
 
 	Languages    []string `json:"languages"`
 	Technologies []string `json:"technologies"`
 
 	File []byte `json:"file"`
-
 }
 
 // uploadCmd represents the upload command
 var uploadCmd = &cobra.Command{
-	Use:   "upload",
+	Use:   "upload <api_url>",
 	Short: "A brief description of your command",
 	Long: `A longer description that spans multiple lines and likely contains examples
 and usage of using your command. For example:
@@ -40,7 +40,9 @@ and usage of using your command. For example:
 Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
-	Run: func(cmd *cobra.Command, args []string) {
+	Args: cobra.ExactArgs(1),
+	ArgAliases: []string{"api_url"},
+	Run:  func(cmd *cobra.Command, args []string) {
 		usernamePassword, err := retrieveUsernamePassword()
 		if err != nil {
 			fmt.Print(err)
@@ -58,11 +60,11 @@ to quickly create a Cobra application.`,
 			fmt.Print(err)
 			return
 		}
-		
+
 		var post Post
 		json.Unmarshal(configBytes, &post)
 
-		markdownFile, err := os.Open(dir + "/post.md")
+		markdownFile, err := os.OpenFile(dir+"/post.md", os.O_RDWR, 0644)
 		if err != nil {
 			fmt.Print(err)
 			return
@@ -77,36 +79,37 @@ to quickly create a Cobra application.`,
 			if bytes.HasPrefix(line, []byte("![")) {
 				s := bytes.IndexByte(line, byte('('))
 				e := bytes.IndexByte(line, byte(')'))
-				if s != -1 && e != -1 && s < e{
+				if s != -1 && e != -1 && s < e {
 					s += 1
-					e -= 1
 					imageName := line[s:e]
-					image, err := ioutil.ReadFile(dir + "/" + string(imageName))
-					if err != nil {
-						fmt.Print(err)
-						return
-					}
+					if !bytes.ContainsAny(imageName, "/") {
+						image, err := ioutil.ReadFile(dir + "/" + string(imageName))
+						if err != nil {
+							fmt.Print(err)
+							return
+						}
 
-					request, err := http.NewRequest("POST", CmdConfig.APIURL + "/api/image", bytes.NewBuffer(image))
-					if err != nil {
-						fmt.Print(err)
-						return
-					}
-					request.Header.Set("Content-type", "application/octet-stream")
-					request.Header.Set("Authorization", "Basic " + usernamePassword)
-					response, err := http.DefaultClient.Do(request)
-					if err != nil {
-						fmt.Print(err)
-						return
-					}
+						request, err := http.NewRequest("POST", args[0] + "/api/image", bytes.NewBuffer(image))
+						if err != nil {
+							fmt.Print(err)
+							return
+						}
+						request.Header.Set("Content-type", "application/octet-stream")
+						request.Header.Set("Authorization", "Basic "+usernamePassword)
+						response, err := http.DefaultClient.Do(request)
+						if err != nil {
+							fmt.Print(err)
+							return
+						}
 
-					location := response.Header.Get("Location")
-					if len(location) == 0 {
-						fmt.Print("Error uploading an image file.")
-						return
-					}
+						location := response.Header.Get("Location")
+						if len(location) == 0 {
+							fmt.Print("Error uploading an image file.")
+							return
+						}
 
-					line = bytes.Replace(line, imageName, []byte(location), 1)
+						line = bytes.Replace(line, imageName, []byte(location), 1)
+					}
 				}
 			}
 
@@ -115,6 +118,15 @@ to quickly create a Cobra application.`,
 		}
 
 		post.File = markdown
+		err = markdownFile.Truncate(0)
+		if err != nil {
+			fmt.Print(err)
+		} else {
+			_, err = markdownFile.Write(markdown)
+			if err != nil {
+				fmt.Print(err)
+			}
+		}
 
 		hero, err := ioutil.ReadFile(dir + "/hero.jpeg")
 		if err != nil {
@@ -130,14 +142,14 @@ to quickly create a Cobra application.`,
 			return
 		}
 
-		apiCall, err := http.NewRequest("POST", CmdConfig.APIURL + "/api/projects", bytes.NewBuffer(reqBody))
+		apiCall, err := http.NewRequest("POST", args[0] + "/api/post", bytes.NewBuffer(reqBody))
 		if err != nil {
 			fmt.Print(err)
 			return
 		}
 
 		apiCall.Header.Set("Content-type", "application/json")
-		apiCall.Header.Set("Authorization", "Basic " + usernamePassword)
+		apiCall.Header.Set("Authorization", "Basic "+usernamePassword)
 
 		response, err := http.DefaultClient.Do(apiCall)
 		if err != nil {

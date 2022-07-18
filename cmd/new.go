@@ -18,13 +18,11 @@ import (
 // newCmd represents the new command
 var newCmd = &cobra.Command{
 	Use:   "new",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Short: "Creates a new post template.",
+	Long: `Creates a new post by prompting the user for the details
+	of the post.
+	
+	$ blog-uploader new`,
 	Run: func(cmd *cobra.Command, args []string) {
 		scanner := bufio.NewScanner(os.Stdin)
 
@@ -37,6 +35,16 @@ to quickly create a Cobra application.`,
 		}
 		postName := strings.TrimSpace(scanner.Text())
 
+		fmt.Print("Enter Type: ")
+		scanner.Scan()
+		err = scanner.Err()
+		if err != nil {
+			fmt.Print(err)
+			return
+		}
+		postType := strings.TrimSpace(scanner.Text())
+
+
 		fmt.Print("Enter Description: ")
 		scanner.Scan()
 		err = scanner.Err()
@@ -48,14 +56,14 @@ to quickly create a Cobra application.`,
 
 		postDate := time.Now().Format("2006-01-02") //YYYY-MM-DD
 
-		fmt.Print("Enter Type: ")
+		fmt.Print("Enter Category: ")
 		scanner.Scan()
 		err = scanner.Err()
 		if err != nil {
 			fmt.Print(err)
 			return
 		}
-		postType := strings.TrimSpace(scanner.Text())
+		postCategory := strings.TrimSpace(scanner.Text())
 
 		fmt.Print("Enter Languages (Space Separated): ")
 		scanner.Scan()
@@ -93,17 +101,19 @@ to quickly create a Cobra application.`,
 
 		postJSON := struct {
 			Name        string `json:"name"`
+			Type        string `json:"type"`
 			Description string `json:"description"`
 			Date        string `json:"date"`
-			Type        string `json:"type"`
+			Category    string `json:"category"`
 		
 			Languages    []string `json:"languages"`
 			Technologies []string `json:"technologies"`
 		}{
 			Name: postName,
+			Type: postType,
 			Description: postDescription,
 			Date: postDate,
-			Type: postType,
+			Category: postCategory,
 			Languages: postLanguages,
 			Technologies: postTechnologies,
 		}
